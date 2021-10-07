@@ -34,7 +34,7 @@ from Plot_results_uplink import Plot
 batch_size = 100
 # train_per_database=100
 # database_size=batch_size*train_per_database
-EPOCHS =int(10)
+EPOCHS =int(20)
 #---------------- for values other than Nuser =12 and Nap=30, the size of environmen must be adjusted in the Data class
 Nuser = 8
 Nap = 20
