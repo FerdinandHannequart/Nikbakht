@@ -77,25 +77,25 @@ class Plot():
         SINR = np.zeros([SNR.shape[0], self.Nuser], dtype='float64')
 
         for k in range(int(self.Nuser)):
-            num = (tf.tile(p[:, [k]], [1, Hloop]) * tf.square(tf.abs(np.sum(
-                tf.tile(SNR[:, :, [k]], [1, 1, Hloop]) * np.square(np.abs(H[:, :, k, :])), axis=1))))
+            num = (tf.tile(tf.gather(p, [k], axis = 1), [1, Hloop]) * tf.square(tf.abs(np.sum(
+                tf.tile(tf.gather(SNR, [k], axis=2), [1, 1, Hloop]) * np.square(np.abs(H[:, :, k, :])), axis=1))))
 
             TotalCI = (tf.tile(tf.expand_dims(p, axis=2), [1, 1, Hloop]) * np.square(
                 np.abs(np.sum(np.tile(np.conj(H[:, :, [k], :]), [1, 1, self.Nuser, 1]) *
-                              np.tile(np.sqrt(tf.expand_dims(SNR[:, :, [k]], axis=3)), [1, 1, self.Nuser, Hloop]) * (
+                              np.tile(np.sqrt(tf.expand_dims(tf.gather(SNR, [k], axis = 2), axis=3)), [1, 1, self.Nuser, Hloop]) * (
                                   H) * np.tile(np.sqrt(tf.expand_dims(SNR, axis=3)), [1, 1, Hloop])
                               , axis=1))))
 
             denomCI = np.sum(TotalCI, axis=1) - TotalCI[:, k, :]
 
             denomCH = tf.reduce_sum(
-                tf.multiply(tf.multiply(tf.tile(SNR[:, :, [k]], [1, 1, Hloop]), tf.square(tf.abs(H[:, :, k, :]))),
+                tf.multiply(tf.multiply(tf.tile(tf.gather(SNR, [k], axis = 2), [1, 1, Hloop]), tf.square(tf.abs(H[:, :, k, :]))),
                             tf.tile(tf.reduce_sum(
                                 tf.multiply(tf.tile(tf.expand_dims(p, axis=1), [1, self.Nap, 1]), tf.divide(SNR, 1 + SNR)),
                                 axis=2, keepdims=True), [1, 1, Hloop]))
                 , axis=1)
             denomNoise = tf.reduce_sum(
-                tf.multiply(tf.tile(SNR[:, :, [k]], [1, 1, Hloop]), tf.square(tf.abs(H[:, :, k, :]))), axis=1)
+                tf.multiply(tf.tile(tf.gather(SNR, [k], axis = 2), [1, 1, Hloop]), tf.square(tf.abs(H[:, :, k, :]))), axis=1)
 
             denom = denomCI + denomCH + denomNoise
             SINR[:, [k]] = np.expand_dims(np.mean(num / denom, axis=1), axis=1)
