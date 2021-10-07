@@ -43,9 +43,31 @@ class Data(Layer):
     #        d=Dist_no_wrap(Xap,Xuser,EX,EY)
         d = self.Dist(Xap,Xuser,self.EX,self.EY)
     
-        #Compute Gains
-        g = -46.0-10.0*self.exponent*tf.math.log(d)/tf.math.log(10.0)
-        g = g+self.shadowing_sigma*tf.random.normal([batch_num,self.Nap,self.Nuser])
+        #Compute large-scale Gains
+        if(True): # use our channel model, more precise
+            d0 = 10.0
+            d1 = 50.0
+            fc = 1800.0
+            hap = 15.0
+            hue = 1.65
+            # shadowing
+            SF = tf.random.normal([batch_num, self.Nap, self.Nuser], stddev=self.shadowing_sigma)
+            # pathloss, constant term
+            L =  46.3 + 33.9 * tf.math.log(fc) / tf.math.log(10.0) - 13.82*tf.math.log(hap)/tf.math.log(10.0) - (
+                    1.1 * tf.math.log(fc) / tf.math.log(10.0) - 0.7) * hue + (
+                         1.56 * tf.math.log(fc) / tf.math.log(10.0) - 0.8)
+            # pathloss, variable term
+            a = 35 * tf.math.log(d) / tf.math.log(10.0)
+            b = 15 * tf.math.log(d1) / tf.math.log(10.0) + 20 * tf.math.log(d) / tf.math.log(10.0)
+            c = 15 * tf.math.log(d1) / tf.math.log(10.0) + 20 * tf.math.log(d0) / tf.math.log(10.0)
+            L_var =tf.maximum(a, b, c)
+            PL = -L-L_var
+            g = PL + SF
+
+        else:
+            g = -46.0-10.0*self.exponent*tf.math.log(d)/tf.math.log(10.0)
+            g = g+self.shadowing_sigma*tf.random.normal([batch_num,self.Nap,self.Nuser])
+
         g_linear = tf.pow(10.0,g/10.0)
         G = g_linear
         power_propotional = 1/tf.pow(tf.reduce_sum(G,axis=1),beta_open_loop)
